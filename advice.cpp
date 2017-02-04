@@ -33,6 +33,9 @@ advice::advice(
 
   // Set up the sentence generator.
   generator_ = std::unique_ptr<sentence>(new sentence(*database_, rng_));
+
+  // Read font file path.
+  fontfile_ = "@" + config["font"].as<std::string>();
 }
 
 void advice::run() const
@@ -227,7 +230,7 @@ void advice::run() const
       std::list<std::string> cur;
       Magick::TypeMetric metric;
       pic.fontPointsize(20);
-      pic.font("@coolvetica.ttf");
+      pic.font(fontfile_);
 
       while (!words.empty())
       {
@@ -271,7 +274,7 @@ void advice::run() const
       pic.draw(drawList);
 
       drawList.clear();
-      drawList.push_back(Magick::DrawableFont("@coolvetica.ttf"));
+      drawList.push_back(Magick::DrawableFont(fontfile_));
       drawList.push_back(Magick::DrawableFillColor("white"));
       drawList.push_back(Magick::DrawablePointSize(14));
       drawList.push_back(Magick::DrawableText(10, 225-blockHeight+4, "How to")); // 10, 255-62-4
@@ -280,7 +283,7 @@ void advice::run() const
       for (int i=0; i<lines.size(); i++)
       {
         drawList.clear();
-        drawList.push_back(Magick::DrawableFont("@coolvetica.ttf"));
+        drawList.push_back(Magick::DrawableFont(fontfile_));
         drawList.push_back(Magick::DrawableFillColor("white"));
         drawList.push_back(Magick::DrawablePointSize(20));
         drawList.push_back(Magick::DrawableText(10, 255-blockHeight+(i*lineHeight)-4, lines[i])); // 10, 255-20-25

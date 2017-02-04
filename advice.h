@@ -33,6 +33,7 @@ private:
   std::unique_ptr<verbly::database> database_;
   std::unique_ptr<sentence> generator_;
   std::unique_ptr<twitter::client> client_;
+  std::string fontfile_;
 };
 
 #endif /* end of include guard: ADVICE_H_5934AC1B */
