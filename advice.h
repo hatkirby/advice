@@ -29,14 +29,6 @@ private:
     }
   };
 
-  verbly::word generateImageNoun() const;
-
-  Magick::Image getImageForNoun(verbly::word pictured) const;
-
-  Magick::Image layoutImage(Magick::Image bg, std::string title) const;
-
-  void sendTweet(Magick::Image pic, std::string title) const;
-
   std::mt19937& rng_;
   std::unique_ptr<verbly::database> database_;
   std::unique_ptr<sentence> generator_;
