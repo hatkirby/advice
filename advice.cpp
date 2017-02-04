@@ -303,13 +303,11 @@ void advice::run() const
 
       std::cout << "Generated image!" << std::endl << "Tweeting..." << std::endl;
 
-      std::string tweetText;
+      std::string tweetText = "How to " + title;
       size_t tweetLim = 140 - client_->getConfiguration().getCharactersReservedPerMedia();
-      if (title.length() > tweetLim)
+      if (tweetText.length() > tweetLim)
       {
-        tweetText = title.substr(0, tweetLim - 1) + "…";
-      } else {
-        tweetText = title;
+        tweetText = tweetText.substr(0, tweetLim - 1) + "…";
       }
 
       long media_id = client_->uploadMedia("image/png", (const char*) outputimg.data(), outputimg.length());
