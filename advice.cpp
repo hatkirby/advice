@@ -312,6 +312,8 @@ void advice::run() const
 
       long media_id = client_->uploadMedia("image/png", (const char*) outputimg.data(), outputimg.length());
       client_->updateStatus(tweetText, {media_id});
+
+      std::cout << "Tweeted!" << std::endl << "Waiting..." << std::endl;
       
       std::this_thread::sleep_for(std::chrono::hours(1));
     } catch (const could_not_get_images& ex)
