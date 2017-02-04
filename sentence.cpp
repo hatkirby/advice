@@ -385,18 +385,20 @@ verbly::token sentence::generateClause(
 
   verbly::filter frameCondition =
     (verbly::frame::length >= 2)
-    && (verbly::frame::part(0) %= (
+    && (verbly::frame::parts(0) %= (
       (verbly::part::type == verbly::part_type::noun_phrase)
       && (verbly::part::role == "Agent"))
-    && !(verbly::frame::part() %= (
-      verbly::part::synrestr %= "adjp")));
+    && (verbly::frame::parts(1) %=
+      (verbly::part::type == verbly::part_type::verb))
+    && !(verbly::frame::parts() %= (
+      verbly::part::synrestrs %= "adjp")));
 
   if (it.hasSynrestr("experiencer"))
   {
     frameCondition &=
-      (verbly::frame::part(2) %=
+      (verbly::frame::parts(2) %=
         (verbly::part::type == verbly::part_type::noun_phrase)
-        && !(verbly::part::synrestr %= "genitive")
+        && !(verbly::part::synrestrs %= "genitive")
         && ((verbly::part::role == "Patient")
           || (verbly::part::role == "Experiencer")));
   }
@@ -407,13 +409,13 @@ verbly::token sentence::generateClause(
 
   if (it.hasSynrestr("participle_phrase"))
   {
-    verbCondition &= (verbly::lemma::form(verbly::inflection::ing_form));
+    verbCondition &= (verbly::lemma::forms(verbly::inflection::ing_form));
   } else if (it.hasSynrestr("progressive"))
   {
-    verbCondition &= (verbly::lemma::form(verbly::inflection::s_form));
+    verbCondition &= (verbly::lemma::forms(verbly::inflection::s_form));
   } else if (it.hasSynrestr("past_participle"))
   {
-    verbCondition &= (verbly::lemma::form(verbly::inflection::past_participle));
+    verbCondition &= (verbly::lemma::forms(verbly::inflection::past_participle));
   }
 
   // Because of the tag distribution, it's possible (albeit extremely unlikely)
@@ -618,7 +620,7 @@ verbly::token sentence::generateClause(
           verbly::filter pgf(true);
           for (const std::string& choice : part.getPrepositionChoices())
           {
-            pgf += (verbly::notion::prepositionGroup == choice);
+            pgf += (verbly::notion::prepositionGroups == choice);
           }
 
           utter << database_.words(pgf && (verbly::notion::partOfSpeech == verbly::part_of_speech::preposition)).first();
@@ -730,7 +732,7 @@ void sentence::visit(verbly::token& it) const
           it = verbly::token(
             database_.words(
               (verbly::notion::partOfSpeech == verbly::part_of_speech::verb)
-              && (verbly::lemma::form(verbly::inflection::ing_form))).first(),
+              && (verbly::lemma::forms(verbly::inflection::ing_form))).first(),
             verbly::inflection::ing_form);
         } else {
           it = generateClause(it);
