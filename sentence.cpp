@@ -101,179 +101,23 @@ std::string sentence::generate() const
   return verbly::implode(std::begin(words), std::end(words), " ");
 }
 
-verbly::filter sentence::parseSelrestrs(
-  verbly::selrestr selrestr) const
+bool sentence::chooseSelrestr(std::set<std::string> selrestrs, std::set<std::string> choices) const
 {
-  switch (selrestr.getType())
+  int validChoices = 0;
+  for (const std::string& choice : choices)
   {
-    case verbly::selrestr::type::empty:
+    if (selrestrs.count(choice))
     {
-      return {};
-    }
-
-    case verbly::selrestr::type::singleton:
-    {
-      verbly::filter result;
-
-      if (selrestr.getRestriction() == "concrete")
-      {
-        result = (verbly::notion::wnid == 100001930); // physical entity
-      } else if (selrestr.getRestriction() == "time")
-      {
-        result = (verbly::notion::wnid == 100028270); // time
-      } else if (selrestr.getRestriction() == "state")
-      {
-        result = (verbly::notion::wnid == 100024720); // state
-      } else if (selrestr.getRestriction() == "abstract")
-      {
-        result = (verbly::notion::wnid == 100002137); // abstract entity
-      } else if (selrestr.getRestriction() == "scalar")
-      {
-        result = (verbly::notion::wnid == 103835412); // number
-      } else if (selrestr.getRestriction() == "currency")
-      {
-        result = (verbly::notion::wnid == 105050379); // currency
-      } else if (selrestr.getRestriction() == "location")
-      {
-        result = (verbly::notion::wnid == 100027167); // location
-      } else if (selrestr.getRestriction() == "organization")
-      {
-        result = (verbly::notion::wnid == 100237078); // organization
-      } else if (selrestr.getRestriction() == "int_control")
-      {
-        result = (verbly::notion::wnid == 100007347); // causal agent
-      } else if (selrestr.getRestriction() == "natural")
-      {
-        result = (verbly::notion::wnid == 100019128); // natural object
-      } else if (selrestr.getRestriction() == "phys_obj")
-      {
-        result = (verbly::notion::wnid == 100002684); // physical object
-      } else if (selrestr.getRestriction() == "solid")
-      {
-        result = (verbly::notion::wnid == 113860793); // solid
-      } else if (selrestr.getRestriction() == "shape")
-      {
-        result = (verbly::notion::wnid == 100027807); // shape
-      } else if (selrestr.getRestriction() == "substance")
-      {
-        result = (verbly::notion::wnid == 100019613); // substance
-      } else if (selrestr.getRestriction() == "idea")
-      {
-        result = (verbly::notion::wnid == 105803379); // idea
-      } else if (selrestr.getRestriction() == "sound")
-      {
-        result = (verbly::notion::wnid == 107111047); // sound
-      } else if (selrestr.getRestriction() == "communication")
-      {
-        result = (verbly::notion::wnid == 100033020); // communication
-      } else if (selrestr.getRestriction() == "region")
-      {
-        result = (verbly::notion::wnid == 105221895); // region
-      } else if (selrestr.getRestriction() == "place")
-      {
-        result = (verbly::notion::wnid == 100586262); // place
-      } else if (selrestr.getRestriction() == "machine")
-      {
-        result = (verbly::notion::wnid == 102958343); // machine
-      } else if (selrestr.getRestriction() == "animate")
-      {
-        result = (verbly::notion::wnid == 100004258); // animate thing
-      } else if (selrestr.getRestriction() == "plant")
-      {
-        result = (verbly::notion::wnid == 103956922); // plant
-      } else if (selrestr.getRestriction() == "comestible")
-      {
-        result = (verbly::notion::wnid == 100021265); // food
-      } else if (selrestr.getRestriction() == "artifact")
-      {
-        result = (verbly::notion::wnid == 100021939); // artifact
-      } else if (selrestr.getRestriction() == "vehicle")
-      {
-        result = (verbly::notion::wnid == 104524313); // vehicle
-      } else if (selrestr.getRestriction() == "human")
-      {
-        result = (verbly::notion::wnid == 100007846); // person
-      } else if (selrestr.getRestriction() == "animal")
-      {
-        result = (verbly::notion::wnid == 100015388); // animal
-      } else if (selrestr.getRestriction() == "body_part")
-      {
-        result = (verbly::notion::wnid == 105220461); // body part
-      } else if (selrestr.getRestriction() == "garment")
-      {
-        result = (verbly::notion::wnid == 103051540); // clothing
-      } else if (selrestr.getRestriction() == "tool")
-      {
-        result = (verbly::notion::wnid == 104451818); // tool
-      } else {
-        return {};
-      }
-
-      std::cout << selrestr.getRestriction() << " (" << selrestr.getPos() << ")" << std::endl;
-
-      if (selrestr.getPos())
-      {
-        return (verbly::notion::fullHypernyms %= result);
-      } else {
-        return !(verbly::notion::fullHypernyms %= result);
-      }
-    }
-
-    case verbly::selrestr::type::group:
-    {
-      std::cout << "or: " << selrestr.getOrlogic() << std::endl;
-      verbly::filter ret(selrestr.getOrlogic());
-
-      for (const verbly::selrestr& child : selrestr)
-      {
-        ret += parseSelrestrs(child);
-      }
-
-      return ret;
+      validChoices++;
     }
   }
-}
-
-bool sentence::requiresSelrestr(
-  std::string restriction,
-  verbly::selrestr selrestr) const
-{
-  switch (selrestr.getType())
-  {
-    case verbly::selrestr::type::empty:
-    {
-      return false;
-    }
-
-    case verbly::selrestr::type::singleton:
-    {
-      if (selrestr.getRestriction() == restriction)
-      {
-        return selrestr.getPos();
-      } else {
-        return false;
-      }
-    }
-
-    case verbly::selrestr::type::group:
-    {
-      if (selrestr.getOrlogic())
-      {
-        return std::all_of(std::begin(selrestr), std::end(selrestr), [=] (const verbly::selrestr& s) {
-          return requiresSelrestr(restriction, s);
-        });
-      } else {
-        return std::any_of(std::begin(selrestr), std::end(selrestr), [=] (const verbly::selrestr& s) {
-          return requiresSelrestr(restriction, s);
-        });
-      }
-    }
-  }
+  
+  return std::bernoulli_distribution(static_cast<double>(validChoices)/static_cast<double>(selrestrs.size()))(rng_);
 }
 
 verbly::word sentence::generateStandardNoun(
   std::string role,
-  verbly::selrestr selrestrs) const
+  std::set<std::string> selrestrs) const
 {
   std::geometric_distribution<int> tagdist(0.5); // 0.06
   std::vector<verbly::word> result;
@@ -292,11 +136,122 @@ verbly::word sentence::generateStandardNoun(
     // Only use selection restrictions for a first attempt.
     if (trySelection)
     {
-      verbly::filter selrestrCondition = parseSelrestrs(selrestrs).compact();
+      verbly::filter selection(true);
 
-      if (selrestrCondition.getType() != verbly::filter::type::empty)
+      for (const std::string& selrestr : selrestrs)
       {
-        condition &= std::move(selrestrCondition);
+        if (selrestr == "concrete")
+        {
+          selection += (verbly::notion::wnid == 100001930); // physical entity
+        } else if (selrestr == "time")
+        {
+          selection += (verbly::notion::wnid == 100028270); // time
+        } else if (selrestr == "state")
+        {
+          selection += (verbly::notion::wnid == 100024720); // state
+        } else if (selrestr == "abstract")
+        {
+          selection += (verbly::notion::wnid == 100002137); // abstract entity
+        } else if (selrestr == "scalar")
+        {
+          selection += (verbly::notion::wnid == 103835412); // number
+        } else if (selrestr == "currency")
+        {
+          selection += (verbly::notion::wnid == 105050379); // currency
+        } else if (selrestr == "location")
+        {
+          selection += (verbly::notion::wnid == 100027167); // location
+        } else if (selrestr == "organization")
+        {
+          selection += (verbly::notion::wnid == 100237078); // organization
+        } else if (selrestr == "int_control")
+        {
+          selection += (verbly::notion::wnid == 100007347); // causal agent
+        } else if (selrestr == "natural")
+        {
+          selection += (verbly::notion::wnid == 100019128); // natural object
+        } else if (selrestr == "phys_obj")
+        {
+          selection += (verbly::notion::wnid == 100002684); // physical object
+        } else if (selrestr == "solid")
+        {
+          selection += (verbly::notion::wnid == 113860793); // solid
+        } else if (selrestr == "shape")
+        {
+          selection += (verbly::notion::wnid == 100027807); // shape
+        } else if (selrestr == "substance")
+        {
+          selection += (verbly::notion::wnid == 100019613); // substance
+        } else if (selrestr == "idea")
+        {
+          selection += (verbly::notion::wnid == 105803379); // idea
+        } else if (selrestr == "sound")
+        {
+          selection += (verbly::notion::wnid == 107111047); // sound
+        } else if (selrestr == "communication")
+        {
+          selection += (verbly::notion::wnid == 100033020); // communication
+        } else if (selrestr == "region")
+        {
+          selection += (verbly::notion::wnid == 105221895); // region
+        } else if (selrestr == "place")
+        {
+          selection += (verbly::notion::wnid == 100586262); // place
+        } else if (selrestr == "machine")
+        {
+          selection += (verbly::notion::wnid == 102958343); // machine
+        } else if (selrestr == "animate")
+        {
+          selection += (verbly::notion::wnid == 100004258); // animate thing
+        } else if (selrestr == "plant")
+        {
+          selection += (verbly::notion::wnid == 103956922); // plant
+        } else if (selrestr == "comestible")
+        {
+          selection += (verbly::notion::wnid == 100021265); // food
+        } else if (selrestr == "artifact")
+        {
+          selection += (verbly::notion::wnid == 100021939); // artifact
+        } else if (selrestr == "vehicle")
+        {
+          selection += (verbly::notion::wnid == 104524313); // vehicle
+        } else if (selrestr == "human")
+        {
+          selection += (verbly::notion::wnid == 100007846); // person
+        } else if (selrestr == "animal")
+        {
+          selection += (verbly::notion::wnid == 100015388); // animal
+        } else if (selrestr == "body_part")
+        {
+          selection += (verbly::notion::wnid == 105220461); // body part
+        } else if (selrestr == "garment")
+        {
+          selection += (verbly::notion::wnid == 103051540); // clothing
+        } else if (selrestr == "tool")
+        {
+          selection += (verbly::notion::wnid == 104451818); // tool
+        } else if ((selrestr == "concrete_inanimate") || (selrestr == "inanimate"))
+        {
+          selection += (verbly::notion::wnid == 100021939); // artifact
+          selection += (verbly::notion::wnid == 100019128); // natural object
+        } else if (selrestr == "non_region_location")
+        {
+          selection += (verbly::notion::wnid == 102913152); // building
+        } else if (selrestr == "non_solid_food")
+        {
+          selection += (verbly::notion::wnid == 107881800); // beverage
+        } else if (selrestr == "solid_food")
+        {
+          selection += (verbly::notion::wnid == 107555863); // solid food
+        } else if (selrestr == "slinky")
+        {
+          selection += (verbly::notion::wnid == 103670849); // line
+        }
+      }
+      
+      if (selection.compact().getType() != verbly::filter::type::empty)
+      {
+        condition &= std::move(selection);
       } else if (role == "Attribute")
       {
         condition &= (verbly::notion::fullHypernyms %= (verbly::notion::wnid == 100024264)); // attribute
@@ -457,7 +412,7 @@ verbly::token sentence::generateClause(
         }
         std::cout << std::endl;
 
-        if (requiresSelrestr("currency", part.getNounSelrestrs()))
+        if (chooseSelrestr(part.getNounSelrestrs(), {"currency"}))
         {
           int lead = std::uniform_int_distribution<int>(1,9)(rng_);
           int tail = std::uniform_int_distribution<int>(0,6)(rng_);
@@ -559,11 +514,7 @@ verbly::token sentence::generateClause(
         } else {
           verbly::word noun = generateStandardNoun(part.getNounRole(), part.getNounSelrestrs());
 
-          bool plural = part.nounHasSynrestr("plural");
-          if (!plural)
-          {
-            plural = requiresSelrestr("plural", part.getNounSelrestrs());
-          }
+          bool plural = part.nounHasSynrestr("plural") || chooseSelrestr(part.getNounSelrestrs(), {"group", "plural"});
 
           utter << generateStandardNounPhrase(
             noun,
