@@ -89,7 +89,7 @@ void advice::run() const
       int backoff = 0;
 
       std::cout << "Generating noun..." << std::endl;
-      std::cout << "Noun: " << pictured.getBaseForm() << std::endl;
+      std::cout << "Noun: " << pictured.getBaseForm().getText() << std::endl;
       std::cout << "Getting URLs..." << std::endl;
 
       std::string lstdata;
@@ -295,7 +295,8 @@ void advice::run() const
       try
       {
         pic.magick("png");
-        pic.write(&outputimg);
+        //pic.write(&outputimg);
+        pic.write("output.png");
       } catch (const Magick::WarningCoder& e)
       {
         // Ignore
@@ -310,8 +311,8 @@ void advice::run() const
         tweetText = tweetText.substr(0, tweetLim - 1) + "…";
       }
 
-      long media_id = client_->uploadMedia("image/png", (const char*) outputimg.data(), outputimg.length());
-      client_->updateStatus(tweetText, {media_id});
+      //long media_id = client_->uploadMedia("image/png", (const char*) outputimg.data(), outputimg.length());
+      //client_->updateStatus(tweetText, {media_id});
 
       std::cout << "Tweeted!" << std::endl << "Waiting..." << std::endl;
       

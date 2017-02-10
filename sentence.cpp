@@ -307,7 +307,7 @@ verbly::token sentence::generateStandardNounPhrase(
     {
       utter << "your";
     } else if (!plural) {
-      if (sounder.getLemma().getBaseForm().startsWithVowelSound())
+      if (sounder.getBaseForm().startsWithVowelSound())
       {
         utter << "an";
       } else {
@@ -316,12 +316,12 @@ verbly::token sentence::generateStandardNounPhrase(
     }
   }
 
-  if (descript)
+  if (descript.isValid())
   {
     utter << descript;
   }
 
-  if (plural && noun.getLemma().hasInflection(verbly::inflection::plural))
+  if (plural && noun.hasInflection(verbly::inflection::plural))
   {
     utter << verbly::token(noun, verbly::inflection::plural);
   } else {
@@ -364,13 +364,13 @@ verbly::token sentence::generateClause(
 
   if (it.hasSynrestr("participle_phrase"))
   {
-    verbCondition &= (verbly::lemma::forms(verbly::inflection::ing_form));
+    verbCondition &= (verbly::word::forms(verbly::inflection::ing_form));
   } else if (it.hasSynrestr("progressive"))
   {
-    verbCondition &= (verbly::lemma::forms(verbly::inflection::s_form));
+    verbCondition &= (verbly::word::forms(verbly::inflection::s_form));
   } else if (it.hasSynrestr("past_participle"))
   {
-    verbCondition &= (verbly::lemma::forms(verbly::inflection::past_participle));
+    verbCondition &= (verbly::word::forms(verbly::inflection::past_participle));
   }
 
   // Because of the tag distribution, it's possible (albeit extremely unlikely)
@@ -533,7 +533,7 @@ verbly::token sentence::generateClause(
 
       case verbly::part_type::verb:
       {
-        std::cout << "V: " << verb.getBaseForm() << std::endl;
+        std::cout << "V: " << verb.getBaseForm().getText() << std::endl;
 
         if (it.hasSynrestr("progressive"))
         {
@@ -683,7 +683,7 @@ void sentence::visit(verbly::token& it) const
           it = verbly::token(
             database_.words(
               (verbly::notion::partOfSpeech == verbly::part_of_speech::verb)
-              && (verbly::lemma::forms(verbly::inflection::ing_form))).first(),
+              && (verbly::word::forms(verbly::inflection::ing_form))).first(),
             verbly::inflection::ing_form);
         } else {
           it = generateClause(it);
