@@ -295,8 +295,7 @@ void advice::run() const
       try
       {
         pic.magick("png");
-        //pic.write(&outputimg);
-        pic.write("output.png");
+        pic.write(&outputimg);
       } catch (const Magick::WarningCoder& e)
       {
         // Ignore
@@ -311,8 +310,8 @@ void advice::run() const
         tweetText = tweetText.substr(0, tweetLim - 1) + "…";
       }
 
-      //long media_id = client_->uploadMedia("image/png", (const char*) outputimg.data(), outputimg.length());
-      //client_->updateStatus(tweetText, {media_id});
+      long media_id = client_->uploadMedia("image/png", (const char*) outputimg.data(), outputimg.length());
+      client_->updateStatus(tweetText, {media_id});
 
       std::cout << "Tweeted!" << std::endl << "Waiting..." << std::endl;
       
