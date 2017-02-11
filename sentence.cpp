@@ -251,7 +251,7 @@ verbly::word sentence::generateStandardNoun(
       
       if (selection.compact().getType() != verbly::filter::type::empty)
       {
-        condition &= std::move(selection);
+        condition &= (verbly::notion::fullHypernyms %= std::move(selection));
       } else if (role == "Attribute")
       {
         condition &= (verbly::notion::fullHypernyms %= (verbly::notion::wnid == 100024264)); // attribute
