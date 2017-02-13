@@ -180,20 +180,21 @@ void advice::run() const
 
         std::string imgstr = imgbuf.str();
         img = Magick::Blob(imgstr.c_str(), imgstr.length());
-        pic.read(img);
-        if (pic.rows() == 0)
-        {
-          continue;
-        }
 
-        // Too small!
-        if (pic.columns() < 400)
+        try
         {
-          continue;
-        }
+          pic.read(img);
 
-        std::cout << url << std::endl;
-        found = true;
+          if ((pic.rows() > 0) && (pic.columns() >= 400))
+          {
+            std::cout << url << std::endl;
+            found = true;
+          }
+        } catch (const Magick::ErrorOption& e)
+        {
+          // Occurs when the the data downloaded from the server is malformed
+          std::cout << "Magick: " << e.what() << std::endl;
+        }
       }
 
       if (!found)
