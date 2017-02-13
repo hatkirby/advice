@@ -1,0 +1,8 @@
+*.png
+.DS_Store
+*.swp
+CMakeCache.txt
+CMakeFiles
+cmake_install.cmake
+Makefile
+config.yml
