@@ -435,9 +435,6 @@ verbly::token sentence::generateClause(
         {
           utter << "your";
           utter << std::set<std::string>({"participle_phrase", "subjectless"});
-        } else if (part.nounHasSynrestr("genitive"))
-        {
-          utter << "your";
         } else if (part.nounHasSynrestr("adv_loc"))
         {
           if (std::bernoulli_distribution(1.0/2.0)(rng_))
@@ -512,6 +509,14 @@ verbly::token sentence::generateClause(
 
           utter << ("\"" + sentence.compile() + "\"");
         } else {
+          if (part.nounHasSynrestr("genitive"))
+          {
+            verbly::word noun = generateStandardNoun("Passive", {"animate"});
+            verbly::token owner = generateStandardNounPhrase(noun, "Passive", false, true);
+            std::string ownerStr = owner.compile() + "'s";
+            utter << ownerStr;
+          }
+
           verbly::word noun = generateStandardNoun(part.getNounRole(), part.getNounSelrestrs());
 
           bool plural = part.nounHasSynrestr("plural") || chooseSelrestr(part.getNounSelrestrs(), {"group", "plural"});
