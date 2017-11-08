@@ -9,6 +9,19 @@ sentence::sentence(
     database_(database),
     rng_(rng)
 {
+  verbly::filter blacklist;
+
+  for (std::string word : {
+    "raped", "Negro"
+  })
+  {
+    blacklist |= (verbly::form::text == word);
+  }
+
+  badWords_ = !blacklist;
+
+   // Blacklist ethnic slurs
+  badWords_ &= !(verbly::word::usageDomains %= (verbly::notion::wnid == 106718862));
 }
 
 std::string sentence::generate() const
@@ -51,54 +64,18 @@ std::string sentence::generate() const
     form << secondSyn;
   }
 
-  // Attempt to compile the form, restarting if a bad word is generated.
-  std::set<std::string> badWords = {"raped"};
+  // Compile the form.
+  verbly::token tok = verbly::token::capitalize(
+    verbly::token::casing::title_case, form);
 
-  verbly::token tok = form;
-  std::list<std::string> words;
-  for (;;)
+  while (!tok.isComplete())
   {
-    // Compile the form.
-    while (!tok.isComplete())
-    {
-      visit(tok);
-    }
-
-    std::string compiled = tok.compile();
-    words = verbly::split<std::list<std::string>>(compiled, " ");
-
-    // Ensure that there are no bad words in the output.
-    if (!std::any_of(std::begin(words), std::end(words), [&badWords] (const std::string& word) {
-      std::string canonWord;
-
-      for (char ch : word)
-      {
-        if (std::isalpha(ch))
-        {
-          canonWord.push_back(std::tolower(ch));
-        }
-      }
-
-      return (badWords.count(canonWord) == 1);
-    })) {
-      break;
-    } else {
-      std::cout << "Bad word generated." << std::endl;
-    }
+    visit(tok);
   }
 
-  // Put the form into title case.
-  for (std::string& word : words)
-  {
-    if ((word[0] == '"') && (word.length() > 1))
-    {
-      word[1] = std::toupper(word[1]);
-    } else {
-      word[0] = std::toupper(word[0]);
-    }
-  }
+  std::string compiled = tok.compile();
 
-  return verbly::implode(std::begin(words), std::end(words), " ");
+  return compiled;
 }
 
 bool sentence::chooseSelrestr(std::set<std::string> selrestrs, std::set<std::string> choices) const
@@ -111,7 +88,7 @@ bool sentence::chooseSelrestr(std::set<std::string> selrestrs, std::set<std::str
       validChoices++;
     }
   }
-  
+
   return std::bernoulli_distribution(static_cast<double>(validChoices)/static_cast<double>(selrestrs.size()))(rng_);
 }
 
@@ -131,7 +108,7 @@ verbly::word sentence::generateStandardNoun(
       //&& (verbly::form::complexity == 1)
      // && (verbly::word::tagCount >= tagdist(rng_)) // Favor more common words
       && (verbly::word::tagCount >= 1)
-      && !(verbly::word::usageDomains %= (verbly::notion::wnid == 106718862)); // Blacklist ethnic slurs
+      && badWords_;
 
     // Only use selection restrictions for a first attempt.
     if (trySelection)
@@ -248,7 +225,7 @@ verbly::word sentence::generateStandardNoun(
           selection += (verbly::notion::wnid == 103670849); // line
         }
       }
-      
+
       if (selection.compact().getType() != verbly::filter::type::empty)
       {
         condition &= (verbly::notion::fullHypernyms %= std::move(selection));
@@ -281,18 +258,7 @@ verbly::token sentence::generateStandardNounPhrase(
   bool definite) const
 {
   verbly::token utter;
-  verbly::word sounder = noun;
-  verbly::word descript;
-
-  if (std::bernoulli_distribution(1.0/8.0)(rng_))
-  {
-    std::geometric_distribution<int> tagdist(0.2);
-    descript = database_.words(
-      (verbly::word::tagCount >= tagdist(rng_))
-      && (verbly::notion::partOfSpeech == verbly::part_of_speech::adjective)).first();
-
-    sounder = descript;
-  }
+  bool indefiniteArticle = false;
 
   if ((std::bernoulli_distribution(1.0/3.0)(rng_)) && (definite))
   {
@@ -307,18 +273,18 @@ verbly::token sentence::generateStandardNounPhrase(
     {
       utter << "your";
     } else if (!plural) {
-      if (sounder.getBaseForm().startsWithVowelSound())
-      {
-        utter << "an";
-      } else {
-        utter << "a";
-      }
+      indefiniteArticle = true;
     }
   }
 
-  if (descript.isValid())
+  if (std::bernoulli_distribution(1.0/8.0)(rng_))
   {
-    utter << descript;
+    std::geometric_distribution<int> tagdist(0.2);
+
+    utter << database_.words(
+      (verbly::word::tagCount >= tagdist(rng_))
+      && (verbly::notion::partOfSpeech == verbly::part_of_speech::adjective)
+      && badWords_).first();
   }
 
   if (plural && noun.hasInflection(verbly::inflection::plural))
@@ -328,7 +294,12 @@ verbly::token sentence::generateStandardNounPhrase(
     utter << noun;
   }
 
-  return utter;
+  if (indefiniteArticle)
+  {
+    return verbly::token::indefiniteArticle(utter);
+  } else {
+    return utter;
+  }
 }
 
 verbly::token sentence::generateClause(
@@ -360,7 +331,8 @@ verbly::token sentence::generateClause(
 
   verbly::filter verbCondition =
     (verbly::notion::partOfSpeech == verbly::part_of_speech::verb)
-    && frameCondition;
+    && frameCondition
+    && badWords_;
 
   if (it.hasSynrestr("participle_phrase"))
   {
@@ -501,20 +473,15 @@ verbly::token sentence::generateClause(
           utter << generateClause(sentence);
         } else if (part.nounHasSynrestr("quotation"))
         {
-          verbly::token sentence(std::set<std::string>({"participle_phrase"}));
-          while (!sentence.isComplete())
-          {
-            visit(sentence);
-          }
-
-          utter << ("\"" + sentence.compile() + "\"");
+          utter << verbly::token::quote("\"", "\"",
+            verbly::token(std::set<std::string>({"past_participle"})));
         } else {
           if (part.nounHasSynrestr("genitive"))
           {
             verbly::word noun = generateStandardNoun("Passive", {"animate"});
             verbly::token owner = generateStandardNounPhrase(noun, "Passive", false, true);
-            std::string ownerStr = owner.compile() + "'s";
-            utter << ownerStr;
+
+            utter << verbly::token::punctuation("'s", owner);
           }
 
           verbly::word noun = generateStandardNoun(part.getNounRole(), part.getNounSelrestrs());
@@ -669,7 +636,8 @@ void sentence::visit(verbly::token& it) const
           std::geometric_distribution<int> tagdist(0.2);
           phrase << database_.words(
             (verbly::word::tagCount >= tagdist(rng_))
-            && (verbly::notion::partOfSpeech == verbly::part_of_speech::adjective)).first();
+            && (verbly::notion::partOfSpeech == verbly::part_of_speech::adjective)
+            && badWords_).first();
         }
 
         it = phrase;
@@ -680,7 +648,7 @@ void sentence::visit(verbly::token& it) const
         it = database_.words(
           (verbly::notion::partOfSpeech == verbly::part_of_speech::adverb)
           && (verbly::word::tagCount >= tagdist(rng_))
-          ).first();
+          && badWords_).first();
       } else if (it.hasSynrestr("participle_phrase"))
       {
         if (std::bernoulli_distribution(1.0/2.0)(rng_))
@@ -688,14 +656,25 @@ void sentence::visit(verbly::token& it) const
           it = verbly::token(
             database_.words(
               (verbly::notion::partOfSpeech == verbly::part_of_speech::verb)
-              && (verbly::word::forms(verbly::inflection::ing_form))).first(),
+              && (verbly::word::forms(verbly::inflection::ing_form))
+              && badWords_).first(),
             verbly::inflection::ing_form);
         } else {
           it = generateClause(it);
         }
+      } else if (it.hasSynrestr("past_participle"))
+      {
+        it = generateClause(it);
       } else {
         it = "*the reality of the situation*";
       }
+
+      break;
+    }
+
+    case verbly::token::type::transform:
+    {
+      visit(it.getInnerToken());
 
       break;
     }

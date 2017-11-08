@@ -32,6 +32,8 @@ private:
 
   const verbly::database& database_;
   std::mt19937& rng_;
+
+  verbly::filter badWords_;
 };
 
 #endif /* end of include guard: SENTENCE_H_81987F60 */
