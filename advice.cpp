@@ -162,7 +162,7 @@ void advice::run() const
         try
         {
           imghandle.perform();
-        } catch (curl::curl_easy_exception error) {
+        } catch (const curl::curl_easy_exception& error) {
           error.print_traceback();
 
           continue;
