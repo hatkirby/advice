@@ -101,6 +101,8 @@ void advice::run() const
         curl::curl_easy lsthandle(lstios);
         std::string lsturl = pictured.getNotion().getImageNetUrl();
         lsthandle.add<CURLOPT_URL>(lsturl.c_str());
+        lsthandle.add<CURLOPT_CONNECTTIMEOUT>(30);
+        lsthandle.add<CURLOPT_TIMEOUT>(300);
 
         try
         {
@@ -158,6 +160,7 @@ void advice::run() const
         imghandle.add<CURLOPT_HTTPHEADER>(headers.get());
         imghandle.add<CURLOPT_URL>(url.c_str());
         imghandle.add<CURLOPT_CONNECTTIMEOUT>(30);
+        imghandle.add<CURLOPT_TIMEOUT>(300);
 
         try
         {
@@ -202,7 +205,7 @@ void advice::run() const
       {
         throw could_not_get_images();
       }
-  
+
       std::string title = generator_->generate();
 
       // Want a 16:9 aspect
@@ -316,7 +319,7 @@ void advice::run() const
       client_->updateStatus(tweetText, {media_id});
 
       std::cout << "Tweeted!" << std::endl << "Waiting..." << std::endl;
-      
+
       std::this_thread::sleep_for(std::chrono::hours(1));
     } catch (const could_not_get_images& ex)
     {
